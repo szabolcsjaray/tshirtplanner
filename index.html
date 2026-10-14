@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>T-Shirt Planner</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page">
+      <aside class="controls">
+        <h1>T-Shirt Planner</h1>
+
+        <label class="field">
+          <span>Labels file</span>
+          <input id="labelFile" type="file" accept=".txt,text/plain" />
+        </label>
+
+        <label class="field">
+          <span>Font size</span>
+          <input id="fontSize" type="range" min="12" max="120" value="44" />
+          <output id="fontSizeValue">44px</output>
+        </label>
+
+        <label class="field">
+          <span>Gap between labels</span>
+          <input id="labelGap" type="range" min="0" max="80" value="24" />
+          <output id="labelGapValue">24px</output>
+        </label>
+
+        <label class="field">
+          <span>Gap between rows</span>
+          <input id="rowGap" type="range" min="0" max="80" value="18" />
+          <output id="rowGapValue">18px</output>
+        </label>
+
+        <label class="field">
+          <span>Font type</span>
+          <select id="fontType">
+            <option value="Arial">Arial</option>
+            <option value="Verdana">Verdana</option>
+            <option value="Georgia">Georgia</option>
+            <option value="Courier New">Courier New</option>
+            <option value="Tahoma">Tahoma</option>
+          </select>
+        </label>
+
+        <div class="field image-size-group">
+          <span>Output image size</span>
+          <div class="size-row">
+            <label>
+              <span>Width</span>
+              <input id="outputWidth" type="number" min="100" max="4000" step="10" value="1200" />
+            </label>
+            <label>
+              <span>Height</span>
+              <input id="outputHeight" type="number" min="100" max="4000" step="10" value="1600" />
+            </label>
+          </div>
+        </div>
+
+        <div class="field palette-section">
+          <span>Color palette</span>
+          <div class="palette-controls">
+            <input id="paletteColorPicker" type="color" value="#1f77b4" />
+            <button id="addPaletteColor" type="button" class="secondary small-button">Add color</button>
+          </div>
+          <div id="paletteList" class="palette-list" aria-label="Color palette list"></div>
+        </div>
+
+        <label class="field">
+          <span>Transparent edge size</span>
+          <input id="edgeFadeSize" type="range" min="0" max="300" value="120" />
+          <output id="edgeFadeSizeValue">120px</output>
+        </label>
+
+        <div class="actions">
+          <button id="renderButton" type="button">Render</button>
+          <button id="downloadButton" type="button" class="secondary">Download PNG</button>
+        </div>
+      </aside>
+
+      <main class="preview-panel">
+        <div class="canvas-frame">
+          <canvas id="previewCanvas" width="1200" height="1600" aria-label="T-shirt label preview"></canvas>
+        </div>
+      </main>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
