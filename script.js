@@ -39,7 +39,7 @@ function buildBluePalette() {
 const defaultPalette = buildBluePalette();
 const defaultLabels = ['T-SHIRT', 'DESIGN', 'TEAM', 'SUMMER', 'PRINT'];
 let palette = [...defaultPalette];
-let loadedLabels = [...defaultLabels];
+let loadedLabels = defaultLabels.map((text) => ({ text, important: false }));
 
 function syncValueLabels() {
   fontSizeValue.textContent = `${fontSizeInput.value}px`;
@@ -52,7 +52,39 @@ function normalizeLabels(rawText) {
   return rawText
     .split(/\r?\n/)
     .map((label) => label.trim())
-    .filter(Boolean);
+    .filter(Boolean)
+    .map((label) => {
+      const important = label.startsWith('*');
+      return {
+        text: important ? label.slice(1).trim() : label,
+        important,
+      };
+    })
+    .filter((label) => label.text);
+}
+
+function shuffleLabels(labels) {
+  const shuffled = [...labels];
+
+  for (let i = shuffled.length - 1; i > 0; i -= 1) {
+    const randomIndex = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[randomIndex]] = [shuffled[randomIndex], shuffled[i]];
+  }
+
+  return shuffled;
+}
+
+function getRandomColorIndex(previousIndex) {
+  if (palette.length === 1) {
+    return 0;
+  }
+
+  if (previousIndex < 0) {
+    return Math.floor(Math.random() * palette.length);
+  }
+
+  const nextIndex = Math.floor(Math.random() * (palette.length - 1));
+  return nextIndex >= previousIndex ? nextIndex + 1 : nextIndex;
 }
 
 function updatePaletteUI() {
@@ -108,7 +140,7 @@ function readUploadedLabels(event) {
   const reader = new FileReader();
   reader.onload = () => {
     const labels = normalizeLabels(String(reader.result));
-    loadedLabels = labels.length ? labels : [...defaultLabels];
+    loadedLabels = labels.length ? labels : defaultLabels.map((text) => ({ text, important: false }));
     renderCanvas();
   };
   reader.readAsText(file);
@@ -151,14 +183,14 @@ function renderCanvas() {
 
   ctx.textBaseline = 'alphabetic';
   ctx.textAlign = 'left';
+  let labels = shuffleLabels(loadedLabels);
 
-  const maxLabelWidth = loadedLabels.reduce((max, label) => {
+  const maxLabelWidth = labels.reduce((max, label) => {
     ctx.font = `${fontSize}px ${fontType}`;
-    return Math.max(max, getTextWidth(label));
+    return Math.max(max, getTextWidth(label.text));
   }, 0);
 
   let y = 30;
-  let rowIndex = 0;
   let labelIndex = 0;
   let lastColorIndex = -1;
 
@@ -166,27 +198,28 @@ function renderCanvas() {
     let x = -Math.random() * maxLabelWidth;
 
     while (x < width + maxLabelWidth) {
-      const label = loadedLabels[labelIndex % loadedLabels.length];
+      if (labelIndex % labels.length === 0) {
+        labels = shuffleLabels(loadedLabels);
+      }
+      const label = labels[labelIndex % labels.length];
       ctx.font = `${fontSize}px ${fontType}`;
-      const labelWidth = getTextWidth(label);
+      const labelWidth = getTextWidth(label.text);
       const alpha = getAlphaForPosition(x, labelWidth, width, edgeFadeSize);
 
       ctx.globalAlpha = alpha;
-      let colorIndex = Math.floor(Math.random() * palette.length);
-      while (colorIndex === lastColorIndex) {
-        colorIndex = Math.floor(Math.random() * palette.length);
-      }
+      const colorIndex = getRandomColorIndex(lastColorIndex);
       ctx.fillStyle = palette[colorIndex];
       lastColorIndex = colorIndex;
-      ctx.fillText(label, x, y + fontSize);
+      ctx.fillText(label.text, x, y + fontSize);
+      if (label.important) {
+        ctx.fillText(label.text, x + 1, y + fontSize);
+      }
       ctx.globalAlpha = 1;
 
       x += labelWidth + labelGap;
       labelIndex += 1;
     }
-
     y += fontSize + rowGap;
-    rowIndex += 1;
   }
   fadeEdges(ctx, edgeFadeSize);
   drawNote(ctx);
@@ -205,23 +238,29 @@ function drawNote(ctx) {
 
 function fadeEdges(ctx, fade = 40) {
   const { width: w, height: h } = ctx.canvas;
+  if (fade <= 0) {
+    return;
+  }
+
   ctx.save();
   ctx.globalCompositeOperation = 'destination-in';
 
   // Horizontal (left + right)
+  const horizontalFade = Math.min(fade, w / 2);
   const hGrad = ctx.createLinearGradient(0, 0, w, 0);
   hGrad.addColorStop(0, 'transparent');
-  hGrad.addColorStop(fade / w, 'black');
-  hGrad.addColorStop(1 - fade / w, 'black');
+  hGrad.addColorStop(horizontalFade / w, 'black');
+  hGrad.addColorStop(1 - horizontalFade / w, 'black');
   hGrad.addColorStop(1, 'transparent');
   ctx.fillStyle = hGrad;
   ctx.fillRect(0, 0, w, h);
 
   // Vertical (top + bottom)
+  const verticalFade = Math.min(fade, h / 2);
   const vGrad = ctx.createLinearGradient(0, 0, 0, h);
   vGrad.addColorStop(0, 'transparent');
-  vGrad.addColorStop(fade / h, 'black');
-  vGrad.addColorStop(1 - fade / h, 'black');
+  vGrad.addColorStop(verticalFade / h, 'black');
+  vGrad.addColorStop(1 - verticalFade / h, 'black');
   vGrad.addColorStop(1, 'transparent');
   ctx.fillStyle = vGrad;
   ctx.fillRect(0, 0, w, h);
